@@ -1,70 +1,112 @@
 import {
   Injectable,
-  HttpException,
-  HttpStatus,
-  UnauthorizedException,
-} from "@nestjs/common";
-import { CreateUserDto } from "src/users/dto/create-user.dto";
-import { UsersService } from "src/users/users.service";
-import { JwtService } from "@nestjs/jwt";
-import * as bcrypt from "bcryptjs";
-import { User } from "src/users/users.model";
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException
+} from '@nestjs/common';
+import { PrismaService } from 'src/prisma.service';
+import { AuthDto } from './dto/auth.dto';
+import { faker } from '@faker-js/faker';
+import { hash, verify } from 'argon2';
+import { JwtService } from '@nestjs/jwt';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
+
+// задекомпозировать ( вынести логику связанную с юзером в юзер сервис , возможно добавить несколько новых приватных методов и использовать их (checkToken , например))
+// вынести текст ошибок в отдельные константы
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private userService: UsersService,
-    private jwtService: JwtService
-  ) {}
+  constructor(private prisma: PrismaService, private jwt: JwtService) {}
 
-  async login(userDto: CreateUserDto) {
-    const user = await this.validateUser(userDto);
-    return this.generateToken(user);
-  }
-
-  async register(userDto: CreateUserDto) {
-    const candidate = await this.userService.getUserByEmail(userDto.email);
-
-    if (candidate) {
-      throw new HttpException(
-        "user with this email already exist",
-        HttpStatus.BAD_REQUEST
-      );
-    }
-
-    const hashPassword = await bcrypt.hash(userDto.password, 7);
-    const user = await this.userService.createUser({
-      ...userDto,
-      password: hashPassword,
+  async register(dto: AuthDto) {
+    const candidate = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email
+      }
     });
 
-    const token = this.generateToken(user);
+    if (candidate) throw new BadRequestException('User already exists');
 
-    return token;
+    const password = await hash(dto.password);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        name: faker.person.fullName(),
+        avatarPath: faker.image.avatar(),
+        phone: faker.phone.number(),
+        password
+      }
+    });
+
+    const tokens = await this.createTokens(user.id);
+
+    return {
+      user: this.getUserFields(user),
+      ...tokens
+    };
   }
 
-  private async generateToken(user: User) {
-    const payload = { email: user.email, id: user.id, roles: user.roles };
-    const token = this.jwtService.sign(payload);
+  async login(dto: AuthDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email
+      }
+    });
 
-    return { token };
+    if (!user)
+      throw new NotFoundException('User with this email does not exist ');
+
+    const isPasswordValid = await verify(user.password, dto.password);
+
+    if (!isPasswordValid) throw new UnauthorizedException('Invaild password ');
+
+    const tokens = await this.createTokens(user.id);
+
+    return {
+      user: this.getUserFields(user),
+      ...tokens
+    };
   }
 
-  private async validateUser(userDto: CreateUserDto) {
-    const user = await this.userService.getUserByEmail(userDto.email);
+  async getNewTokens(dto: RefreshTokenDto) {
+    const { refreshToken } = dto;
 
-    if (!user) {
-      throw new UnauthorizedException({ message: "Invalid email or password" });
-    }
+    const parsedToken = await this.jwt.verifyAsync(refreshToken);
 
-    const passFromRequest = userDto.password;
-    const passFormDb = user.password;
-    const passwordEquals = await bcrypt.compare(passFromRequest, passFormDb);
+    if (!parsedToken) throw new UnauthorizedException('Invalid refresh token');
 
-    if (!passwordEquals) {
-      throw new UnauthorizedException({ message: "Invalid email or password" });
-    }
+    const { id } = parsedToken;
 
-    return user;
+    const user = await this.prisma.user.findUnique({ where: { id } });
+
+    const tokens = await this.createTokens(user.id);
+
+    return {
+      user: this.getUserFields(user),
+      ...tokens
+    };
+  }
+
+  private async createTokens(userId: number) {
+    const data = { id: userId };
+
+    const accessToken = this.jwt.sign(data, {
+      expiresIn: '15m'
+    });
+
+    const refreshToken = this.jwt.sign(data, {
+      expiresIn: '7d'
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  private getUserFields(user: CreateUserDto) {
+    return {
+      id: user.id,
+      email: user.email
+    };
   }
 }

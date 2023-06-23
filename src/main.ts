@@ -1,26 +1,16 @@
-import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import { ValidationPipe } from "./pipes/validation.pipe";
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { PrismaService } from './prisma.service';
 
-async function start() {
-  const PORT = process.env.PORT;
+async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const config = new DocumentBuilder()
-    .setTitle("NEST_F_P")
-    .setDescription("Pravoslavnie endpointi")
-    .setVersion("1.0.0")
-    .build();
+  const prismaService = app.get(PrismaService);
+  await prismaService.enableShutdownHooks(app);
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("/api/docs", app, document);
+  app.enableCors();
+  app.setGlobalPrefix('api');
 
-  // таким образом можно использовать гварды / пайпы глобально (для всех ендпоинтов)
-
-  app.useGlobalPipes(new ValidationPipe());
-
-  await app.listen(PORT, () => console.log(`sever is working on port ${PORT}`));
+  await app.listen(5000);
 }
-
-start();
+bootstrap();
