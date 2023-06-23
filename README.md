@@ -1,1 +1,3 @@
-Я крутой
+npm i 
+prisma db push
+npm run dev
