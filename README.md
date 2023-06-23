@@ -1,3 +1,3 @@
-npm i 
-prisma db push
-npm run dev
+npm i   
+prisma db push  
+npm run dev  
