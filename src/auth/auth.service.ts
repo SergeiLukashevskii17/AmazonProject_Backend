@@ -1,43 +1,36 @@
 import {
   Injectable,
-  BadRequestException,
   NotFoundException,
   UnauthorizedException
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import { AuthDto } from './dto/auth.dto';
 import { faker } from '@faker-js/faker';
-import { hash, verify } from 'argon2';
+import { verify } from 'argon2';
 import { JwtService } from '@nestjs/jwt';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { CreateUserDto } from 'src/user/dto/create-user.dto';
-
-// задекомпозировать ( вынести логику связанную с юзером в юзер сервис , возможно добавить несколько новых приватных методов и использовать их (checkToken , например))
-// вынести текст ошибок в отдельные константы
+import { UserService } from 'src/user/user.service';
+import {
+  INVALID_PASSWORD,
+  INVALID_REFRESH_TOKEN,
+  NO_USER_WITH_THIS_EMAIL
+} from 'src/errors';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwt: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private userService: UserService
+  ) {}
 
   async register(dto: AuthDto) {
-    const candidate = await this.prisma.user.findUnique({
-      where: {
-        email: dto.email
-      }
-    });
-
-    if (candidate) throw new BadRequestException('User already exists');
-
-    const password = await hash(dto.password);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        name: faker.person.fullName(),
-        avatarPath: faker.image.avatar(),
-        phone: faker.phone.number(),
-        password
-      }
+    const user = await this.userService.create({
+      email: dto.email,
+      password: dto.password,
+      name: faker.person.fullName(),
+      avatarPath: faker.image.avatar(),
+      phone: faker.phone.number()
     });
 
     const tokens = await this.createTokens(user.id);
@@ -55,12 +48,11 @@ export class AuthService {
       }
     });
 
-    if (!user)
-      throw new NotFoundException('User with this email does not exist ');
+    if (!user) throw new NotFoundException(NO_USER_WITH_THIS_EMAIL);
 
     const isPasswordValid = await verify(user.password, dto.password);
 
-    if (!isPasswordValid) throw new UnauthorizedException('Invaild password ');
+    if (!isPasswordValid) throw new UnauthorizedException(INVALID_PASSWORD);
 
     const tokens = await this.createTokens(user.id);
 
@@ -71,16 +63,10 @@ export class AuthService {
   }
 
   async getNewTokens(dto: RefreshTokenDto) {
-    const { refreshToken } = dto;
-
-    const parsedToken = await this.jwt.verifyAsync(refreshToken);
-
-    if (!parsedToken) throw new UnauthorizedException('Invalid refresh token');
+    const parsedToken = await this.checkToken(dto);
 
     const { id } = parsedToken;
-
-    const user = await this.prisma.user.findUnique({ where: { id } });
-
+    const user = await this.userService.getById(id);
     const tokens = await this.createTokens(user.id);
 
     return {
@@ -103,7 +89,17 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private getUserFields(user: CreateUserDto) {
+  private async checkToken(dto: RefreshTokenDto) {
+    const { refreshToken } = dto;
+
+    const parsedToken = await this.jwt.verifyAsync(refreshToken);
+
+    if (!parsedToken) throw new UnauthorizedException(INVALID_REFRESH_TOKEN);
+
+    return parsedToken;
+  }
+
+  private getUserFields(user: { [key: string]: any }) {
     return {
       id: user.id,
       email: user.email

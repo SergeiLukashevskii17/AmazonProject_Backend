@@ -1,7 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { PrismaClient, Product } from '@prisma/client';
 import * as dotenv from 'dotenv';
-import { getRandomNumber } from 'src/utils/random-number';
+import { generateSlug } from '../src/utils/generate-slug';
+import { getRandomNumber } from '../src/utils/random-number';
 
 dotenv.config();
 

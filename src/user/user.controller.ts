@@ -4,7 +4,6 @@ import {
   Get,
   HttpCode,
   Put,
-  Patch,
   Param,
   UsePipes,
   ValidationPipe
@@ -33,7 +32,7 @@ export class UserController {
     return this.userService.update(id, dto);
   }
 
-  @Patch('favorites/:productId')
+  @Put('favorites/:productId')
   @HttpCode(200)
   @Auth()
   async toggleFavorite(

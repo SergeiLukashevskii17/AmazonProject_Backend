@@ -1,4 +1,4 @@
-function generateSlug(input: string): string {
+export function generateSlug(input: string): string {
     const transliterationMap: { [key: string]: string } = {
       а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh', з: 'z', и: 'i', й: 'y',
       к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f',

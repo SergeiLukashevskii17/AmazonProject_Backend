@@ -4,10 +4,22 @@ import {
   NotFoundException
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
-import { prismaReturnUserDto } from './dto/prisma-return-user.dto';
+import { PrismaReturnUserDto } from './dto/prisma-return-user.dto';
 import { Prisma } from '@prisma/client';
 import { UpdateUserDto } from './dto/update-user-dto';
 import { ToggleFavoriteAction } from './types/toggleFavorite';
+import { CreateUserDto } from './dto/create-user.dto';
+import { hash } from 'argon2';
+import {
+  DUBLICATE_EMAIL,
+  DUBLICATE_PHONE,
+  NON_EXISTENT_PRODUCT,
+  NON_EXISTENT_USER,
+  NO_USER_WITH_THIS_EMAIL,
+  NO_USER_WITH_THIS_PHONE,
+  PRODUCT_IS_FAVORITE,
+  PRODUCT_IS_NOT_FAVORITE
+} from 'src/errors';
 
 @Injectable()
 export class UserService {
@@ -19,7 +31,7 @@ export class UserService {
         id
       },
       select: {
-        ...prismaReturnUserDto,
+        ...PrismaReturnUserDto,
         ...additionalSelectObject,
         favorites: {
           select: {
@@ -38,6 +50,32 @@ export class UserService {
     return user;
   }
 
+  async create(dto: CreateUserDto) {
+    const { email, phone } = dto;
+
+    const userWithCurrentEmail = await this.prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (userWithCurrentEmail)
+      throw new BadRequestException(NO_USER_WITH_THIS_EMAIL);
+
+    const userWithCurrentPhone = await this.prisma.user.findUnique({
+      where: { phone }
+    });
+
+    if (userWithCurrentPhone)
+      throw new BadRequestException(NO_USER_WITH_THIS_PHONE);
+
+    const password = await hash(dto.password);
+
+    const user = await this.prisma.user.create({
+      data: { ...dto, password }
+    });
+
+    return user;
+  }
+
   async update(userId: number, dto: UpdateUserDto) {
     const { email, name, avatarPath, phone } = dto;
 
@@ -45,17 +83,13 @@ export class UserService {
       where: { email }
     });
 
-    if (userWithCurrentEmail)
-      throw new BadRequestException('User with current email already exist');
+    if (userWithCurrentEmail) throw new BadRequestException(DUBLICATE_EMAIL);
 
     const userWithCurrentPhone = await this.prisma.user.findUnique({
       where: { phone }
     });
 
-    if (userWithCurrentPhone)
-      throw new BadRequestException(
-        'User with current phone number already exist'
-      );
+    if (userWithCurrentPhone) throw new BadRequestException(DUBLICATE_PHONE);
 
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
@@ -81,8 +115,8 @@ export class UserService {
       where: { id: productId }
     });
 
-    if (!user) throw new NotFoundException('User not found');
-    if (!product) throw new NotFoundException('Product not found');
+    if (!user) throw new NotFoundException(NON_EXISTENT_USER);
+    if (!product) throw new NotFoundException(NON_EXISTENT_PRODUCT);
 
     const isProductAlreadyFavorite = user.favorites.some(
       product => product.id === productId
@@ -91,10 +125,10 @@ export class UserService {
     const needToAdd = actionType === ToggleFavoriteAction.Add;
 
     if (needToAdd && isProductAlreadyFavorite)
-      throw new BadRequestException('this product is already a favorite ');
+      throw new BadRequestException(PRODUCT_IS_FAVORITE);
 
     if (!needToAdd && !isProductAlreadyFavorite)
-      throw new BadRequestException('this product is not favorite ');
+      throw new BadRequestException(PRODUCT_IS_NOT_FAVORITE);
 
     const updatedUser = await this.prisma.user.update({
       where: { id: user.id },
@@ -104,6 +138,10 @@ export class UserService {
             id: productId
           }
         }
+      },
+      select: {
+        ...PrismaReturnUserDto,
+        favorites: { select: { id: true, name: true } }
       }
     });
 
