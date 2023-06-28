@@ -13,7 +13,17 @@ import { StatisticsModule } from './statistics/statistics.module';
 import { PaginationModule } from './pagination/pagination.module';
 
 @Module({
-  imports: [AuthModule, ConfigModule.forRoot(), UserModule, ProductModule, ReviewModule, CategoryModule, OrderModule, StatisticsModule, PaginationModule],
+  imports: [
+    AuthModule,
+    ConfigModule.forRoot(),
+    UserModule,
+    ProductModule,
+    ReviewModule,
+    CategoryModule,
+    OrderModule,
+    StatisticsModule,
+    PaginationModule
+  ],
   controllers: [AppController],
   providers: [AppService, PrismaService]
 })

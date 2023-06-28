@@ -8,10 +8,15 @@ import { PrismaReturnReviewDto } from './dto/prisma-return-review.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { PrismaReturnUserDto } from 'src/user/dto/prisma-return-user.dto';
+import { ProductService } from 'src/product/product.service';
+import { DUBLICATE_REVIEW, NON_EXISTENT_REVIEW } from 'src/errors';
 
 @Injectable()
 export class ReviewService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private productService: ProductService
+  ) {}
 
   async getAll() {
     const reviews = await this.prisma.reviews.findMany({
@@ -35,7 +40,7 @@ export class ReviewService {
     });
 
     if (!review) {
-      throw new NotFoundException('Review not found');
+      throw new NotFoundException(NON_EXISTENT_REVIEW);
     }
 
     return review;
@@ -43,7 +48,8 @@ export class ReviewService {
 
   async create(userId: number, dto: CreateReviewDto) {
     const { productId, text, rating } = dto;
-    // дописать проверку на существование продукта
+
+    await this.productService.getById(productId);
 
     // проверям , не оставлял ли пользователь отзыв для данного товара
     const user = await this.prisma.user.findUnique({
@@ -54,9 +60,7 @@ export class ReviewService {
     const reviewsIds = usersCurrentReviews.map(review => review.productId);
 
     if (reviewsIds.includes(productId))
-      throw new BadRequestException(
-        'you have already left a review for this product'
-      );
+      throw new BadRequestException(DUBLICATE_REVIEW);
 
     const review = await this.prisma.reviews.create({
       data: {
@@ -105,7 +109,7 @@ export class ReviewService {
   }
 
   async getAvgRating(productId: number) {
-    // дописать проверку на существование продукта
+    await this.productService.getById(productId);
 
     const avgRating = await this.prisma.reviews
       .aggregate({ where: { productId }, _avg: { rating: true } })

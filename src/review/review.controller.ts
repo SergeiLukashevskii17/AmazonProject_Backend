@@ -45,7 +45,10 @@ export class ReviewController {
   @HttpCode(200)
   @Auth()
   @Post()
-  async createReview(@CurrentUser('id') userId, @Body() dto: CreateReviewDto) {
+  async createReview(
+    @CurrentUser('id') userId: number,
+    @Body() dto: CreateReviewDto
+  ) {
     const review = await this.reviewService.create(userId, dto);
 
     return review;

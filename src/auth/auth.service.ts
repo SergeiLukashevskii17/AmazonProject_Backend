@@ -36,7 +36,7 @@ export class AuthService {
     const tokens = await this.createTokens(user.id);
 
     return {
-      user: this.getUserFields(user),
+      user: { id: user.id, email: user.email },
       ...tokens
     };
   }
@@ -57,7 +57,7 @@ export class AuthService {
     const tokens = await this.createTokens(user.id);
 
     return {
-      user: this.getUserFields(user),
+      user: { id: user.id, email: user.email },
       ...tokens
     };
   }
@@ -70,7 +70,7 @@ export class AuthService {
     const tokens = await this.createTokens(user.id);
 
     return {
-      user: this.getUserFields(user),
+      user: { id: user.id, email: user.email },
       ...tokens
     };
   }
@@ -79,11 +79,11 @@ export class AuthService {
     const data = { id: userId };
 
     const accessToken = this.jwt.sign(data, {
-      expiresIn: '15m'
+      expiresIn: process.env.ACCESS_TOKEN_LIFE_CYCLE
     });
 
     const refreshToken = this.jwt.sign(data, {
-      expiresIn: '7d'
+      expiresIn: process.env.REFRESH_TOKEN_LIFE_CYCLE
     });
 
     return { accessToken, refreshToken };
@@ -97,12 +97,5 @@ export class AuthService {
     if (!parsedToken) throw new UnauthorizedException(INVALID_REFRESH_TOKEN);
 
     return parsedToken;
-  }
-
-  private getUserFields(user: { [key: string]: any }) {
-    return {
-      id: user.id,
-      email: user.email
-    };
   }
 }

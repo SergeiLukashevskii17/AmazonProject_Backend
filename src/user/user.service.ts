@@ -20,10 +20,14 @@ import {
   PRODUCT_IS_FAVORITE,
   PRODUCT_IS_NOT_FAVORITE
 } from 'src/errors';
+import { ProductService } from 'src/product/product.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private productService: ProductService
+  ) {}
 
   async getById(id: number, additionalSelectObject: Prisma.UserSelect = {}) {
     const user = await this.prisma.user.findUnique({
@@ -45,7 +49,7 @@ export class UserService {
       }
     });
 
-    if (!user) throw new BadRequestException('User is not found');
+    if (!user) throw new BadRequestException(NON_EXISTENT_USER);
 
     return user;
   }
@@ -111,9 +115,7 @@ export class UserService {
     actionType: ToggleFavoriteAction
   ) {
     const user = await this.getById(userId);
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId }
-    });
+    const product = await this.productService.getById(productId);
 
     if (!user) throw new NotFoundException(NON_EXISTENT_USER);
     if (!product) throw new NotFoundException(NON_EXISTENT_PRODUCT);

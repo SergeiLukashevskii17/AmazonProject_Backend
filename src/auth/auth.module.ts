@@ -6,11 +6,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getJwtConfig } from 'src/config/jwt.config';
 import { JwtStrategy } from './jwt.strategy';
-import { UserService } from 'src/user/user.service';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, PrismaService, JwtStrategy, UserService],
+  providers: [AuthService, PrismaService, JwtStrategy],
   imports: [
     ConfigModule,
     // тут короче это как-то подзвяано с jwtStrategy , мы берём при запросе из токена id , по нему получаем юзер модель и передаём в поле request.user дату пользователя из дб
@@ -18,7 +18,8 @@ import { UserService } from 'src/user/user.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getJwtConfig
-    })
+    }),
+    UserModule
   ]
 })
 export class AuthModule {}
