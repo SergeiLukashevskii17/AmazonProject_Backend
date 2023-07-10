@@ -9,7 +9,7 @@ export class StatisticsService {
     private userService: UserService
   ) {}
 
-  async getMane(userId: number) {
+  async getMain(userId: number) {
     const user = await this.userService.getById(userId, {
       orders: { select: { items: true } },
       reviews: true

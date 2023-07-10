@@ -10,6 +10,6 @@ export class StatisticsController {
   @Get()
   @Auth()
   getMainStatistics(@CurrentUser('id') userId: number) {
-    return this.statisticsService.getMane(userId);
+    return this.statisticsService.getMain(userId);
   }
 }
