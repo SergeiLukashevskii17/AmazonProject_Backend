@@ -61,15 +61,13 @@ export class UserService {
       where: { email }
     });
 
-    if (userWithCurrentEmail)
-      throw new BadRequestException(NO_USER_WITH_THIS_EMAIL);
+    if (userWithCurrentEmail) throw new BadRequestException(DUBLICATE_EMAIL);
 
     const userWithCurrentPhone = await this.prisma.user.findUnique({
       where: { phone }
     });
 
-    if (userWithCurrentPhone)
-      throw new BadRequestException(NO_USER_WITH_THIS_PHONE);
+    if (userWithCurrentPhone) throw new BadRequestException(DUBLICATE_PHONE);
 
     const password = await hash(dto.password);
 
