@@ -23,7 +23,7 @@ export class AuthController {
   }
 
   @UsePipes(new ValidationPipe()) // отдаёт ошибку на запрос , если поле не соответсвует описанному в dto ( AuthDto в данном случае)
-  @Auth() // проверяет пользователь на авторизованность
+  // @Auth()
   @HttpCode(200)
   @Post('login/access-token')
   async getNewTokens(@Body() dto: RefreshTokenDto) {
