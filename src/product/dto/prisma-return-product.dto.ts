@@ -9,13 +9,9 @@ export const PrismaReturnProductDto: Prisma.ProductSelect = {
   name: true,
   price: true,
   createdAt: true,
-  slug: true
-};
-
-export const PrismaReturnProductFullDto: Prisma.ProductSelect = {
-  ...PrismaReturnProductDto,
+  slug: true,
+  category: { select: PrismaReturnCategoryDto },
   reviews: {
     select: PrismaReturnReviewDto
-  },
-  category: { select: PrismaReturnCategoryDto }
+  }
 };

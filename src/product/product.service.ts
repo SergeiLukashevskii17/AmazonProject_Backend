@@ -1,9 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
-import {
-  PrismaReturnProductDto,
-  PrismaReturnProductFullDto
-} from './dto/prisma-return-product.dto';
+import { PrismaReturnProductDto } from './dto/prisma-return-product.dto';
 import { NON_EXISTENT_PRODUCT } from 'src/errors';
 import { CreateProductDto } from './dto/create-product.dto';
 import { generateSlug } from 'src/utils/generate-slug';
@@ -81,7 +78,7 @@ export class ProductService {
   async getById(id: number) {
     const product = await this.prisma.product.findUnique({
       where: { id },
-      select: PrismaReturnProductFullDto
+      select: PrismaReturnProductDto
     });
 
     if (!product) throw new NotFoundException(NON_EXISTENT_PRODUCT);
@@ -92,7 +89,7 @@ export class ProductService {
   async getBySlug(slug: string) {
     const product = await this.prisma.product.findUnique({
       where: { slug },
-      select: PrismaReturnProductFullDto
+      select: PrismaReturnProductDto
     });
 
     if (!product) throw new NotFoundException(NON_EXISTENT_PRODUCT);
@@ -113,7 +110,7 @@ export class ProductService {
           id: currentProduct.id
         }
       },
-      select: PrismaReturnProductFullDto
+      select: PrismaReturnProductDto
     });
 
     if (!products.length) throw new NotFoundException(NON_EXISTENT_PRODUCT);
