@@ -6,6 +6,8 @@ const INVALID_REFRESH_TOKEN = 'Invalid refresh token';
 const NON_EXISTENT_USER = 'User not found';
 const NON_EXISTENT_CATEGORY = 'Category not found';
 const NON_EXISTENT_PRODUCT = 'Product not found';
+const NON_EXISTENT_PRODUCT_OR_PRODUCTS =
+  'Invalid productId, at least one product not found';
 const NON_EXISTENT_REVIEW = 'Review not found';
 const NO_USER_WITH_THIS_EMAIL = 'User with this email does not exist';
 const NO_USER_WITH_THIS_PHONE = 'User with this phone number does not exist';
@@ -19,6 +21,7 @@ export {
   INVALID_PASSWORD,
   INVALID_REFRESH_TOKEN,
   NON_EXISTENT_PRODUCT,
+  NON_EXISTENT_PRODUCT_OR_PRODUCTS,
   NON_EXISTENT_USER,
   NO_USER_WITH_THIS_EMAIL,
   NO_USER_WITH_THIS_PHONE,

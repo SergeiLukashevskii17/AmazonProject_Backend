@@ -37,6 +37,11 @@ export class ProductController {
     return this.productService.getBySlug(slug);
   }
 
+  @Get('category/:id')
+  async getByCategory(@Param('id') id: string) {
+    return this.productService.getByCategory(Number(id));
+  }
+
   @Get('similiar/:id')
   async getSimiliar(@Param('id') id: string) {
     return this.productService.getSimiliar(Number(id));

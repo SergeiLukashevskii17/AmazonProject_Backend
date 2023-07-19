@@ -1,7 +1,16 @@
-import { Controller, Get } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UsePipes,
+  ValidationPipe,
+  HttpCode
+} from '@nestjs/common';
 import { OrderService } from './order.service';
 import { CurrentUser } from 'src/auth/decorators/user.decorator';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { OrderDto } from './dto/create-order.dto';
 
 @Controller('order')
 export class OrderController {
@@ -9,7 +18,15 @@ export class OrderController {
 
   @Get()
   @Auth()
-  async getAll(@CurrentUser('id') userId: number) {
+  getAll(@CurrentUser('id') userId: number) {
     return this.orderService.getAll(userId);
+  }
+
+  @UsePipes(new ValidationPipe())
+  @HttpCode(200)
+  @Post()
+  @Auth()
+  placeOrder(@Body() dto: OrderDto, @CurrentUser('id') userId: number) {
+    return this.orderService.placeOrder(dto, userId);
   }
 }

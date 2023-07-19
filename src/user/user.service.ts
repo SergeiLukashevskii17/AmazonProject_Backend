@@ -15,8 +15,6 @@ import {
   DUBLICATE_PHONE,
   NON_EXISTENT_PRODUCT,
   NON_EXISTENT_USER,
-  NO_USER_WITH_THIS_EMAIL,
-  NO_USER_WITH_THIS_PHONE,
   PRODUCT_IS_FAVORITE,
   PRODUCT_IS_NOT_FAVORITE
 } from 'src/errors';
@@ -43,7 +41,13 @@ export class UserService {
             name: true,
             price: true,
             images: true,
-            slug: true
+            slug: true,
+            category: {
+              select: {
+                slug: true
+              }
+            },
+            reviews: true
           }
         }
       }

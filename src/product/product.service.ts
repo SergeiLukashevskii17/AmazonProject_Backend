@@ -8,12 +8,14 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { GetAllProductDto, ProductSort } from './dto/get-all-products.dto';
 import { PaginationService } from 'src/pagination/pagination.service';
 import { Prisma } from '@prisma/client';
+import { CategoryService } from 'src/category/category.service';
 
 @Injectable()
 export class ProductService {
   constructor(
     private prisma: PrismaService,
-    private paginationService: PaginationService
+    private paginationService: PaginationService,
+    private cateogoryService: CategoryService
   ) {}
 
   async getAll(dto: GetAllProductDto = {}) {
@@ -97,9 +99,27 @@ export class ProductService {
     return product;
   }
 
-  // получаем список товаров с такой же категорией , не включая наш товар
-  async getSimiliar(id: number) {
-    const currentProduct = await this.getById(id);
+  // мб объеденить эти 2
+  async getByCategory(categoryId: number) {
+    const currentCategory = await this.cateogoryService.getById(categoryId);
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        category: {
+          slug: currentCategory.slug
+        }
+      },
+      select: PrismaReturnProductDto
+    });
+
+    if (!products.length) throw new NotFoundException(NON_EXISTENT_PRODUCT);
+
+    return products;
+  }
+
+  //  берём id товара и по отдаёт список товар той же категории, к какой принадлежит товар с данным id
+  async getSimiliar(productId: number) {
+    const currentProduct = await this.getById(productId);
 
     const products = await this.prisma.product.findMany({
       where: {
