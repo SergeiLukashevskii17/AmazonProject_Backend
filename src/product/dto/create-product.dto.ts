@@ -4,8 +4,8 @@ export class CreateProductDto {
   @IsString()
   name: string;
 
-  @IsString()
-  price: string;
+  @IsNumber()
+  price: number;
 
   @IsString()
   description?: string;

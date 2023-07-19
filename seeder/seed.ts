@@ -19,7 +19,7 @@ const createProducts = async (quantity: number) => {
       data: {
         name: productName,
         description: faker.lorem.paragraph(),
-        price: faker.finance.amount(10, 999, 2, '$'),
+        price: getRandomNumber(5, 1000),
         slug: generateSlug(productName),
         images: Array.from({ length: getRandomNumber(2, 6) }).map(() =>
           faker.image.url({ width: 240, height: 240 })

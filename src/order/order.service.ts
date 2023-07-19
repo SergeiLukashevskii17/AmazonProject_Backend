@@ -3,12 +3,8 @@ import { PrismaService } from 'src/prisma.service';
 import { OrderDto } from './dto/create-order.dto';
 import { NON_EXISTENT_PRODUCT_OR_PRODUCTS } from 'src/errors';
 import { PrismaReturnProductDto } from 'src/product/dto/prisma-return-product.dto';
-import * as YooKassa from 'yookassa';
+import Stripe from 'stripe';
 
-const yooKassa = new YooKassa({
-  shopId: process.env.SHOP_ID,
-  secretKey: process.env.PAYMENT_TOKEN
-});
 @Injectable()
 export class OrderService {
   constructor(private prisma: PrismaService) {}
@@ -59,21 +55,22 @@ export class OrderService {
       }
     });
 
-    const payment = await yooKassa.createPayment({
-      amount: {
-        value: total.toFixed(2),
-        currency: 'RUB'
-      },
-      payment_method_data: {
-        type: 'bank-card'
-      },
-      confirmation: {
-        type: 'redirect',
-        return_url: 'http://localhost:3000/thanks'
-      },
-      description: `Order #${order.id}`
+    this.useStripe();
+
+    let payment;
+
+    return { payment };
+  }
+
+  private async useStripe() {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2022-11-15'
     });
 
-    return payment;
+    const customer = await stripe.customers.create({
+      email: 'jy6c3twfdsfsdfds@gmail.com'
+    });
+
+    console.log('C U S T O M E R ', customer);
   }
 }
